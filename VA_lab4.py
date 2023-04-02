@@ -218,7 +218,7 @@ def count_razn(iy, fy):
     return razn
 
 #метод прогонки
-def progonka(table):
+def progonka(table, h):
 
     n = len(table) - 1
 
@@ -233,16 +233,16 @@ def progonka(table):
         if k == 0:
             a[k].append(0)
         else:
-            a[k].append(table[i][2])
+            a[k].append(h[k])
 
-        a[k].append(2 * (table[i][2] + table[i + 1][2]))
+        a[k].append(2 * (h[k] + h[k + 1]))
         
         if k == n - 2:
             a[k].append(0)
         else:
-            a[k].append(table[i + 1][2])
+            a[k].append(h[k + 1])
 
-        b.append(6 * ((table[i + 1][1] - table[i][1]) / table[i + 1][2] - (table[i][1] - table[i - 1][1]) / table[i][2]))
+        b.append(6 * ((table[i + 1][1] - table[i][1]) / h[k + 1] - (table[i][1] - table[i - 1][1]) / h[k]))
 
     #прямой ход
     v = []
@@ -251,42 +251,68 @@ def progonka(table):
     v.append(a[0][2] / a[0][1] * (-1))
     u.append(b[0] / a[0][1])
     
-    for i in range(1, n - 1):
-        v.append(a[0][2] / a[0][1] * (-1))
-        u.append(b[0] / a[0][1])
-    return
+    for i in range(1, n - 2):
+        v.append(a[i][2] / (a[i][1] * (-1) - a[i][0] * v[i - 1]))
+        u.append((a[i][0] * u[i - 1] - b[i]) / (a[i][1] * (-1) - a[i][0] * v[i - 1]))
+
+    v.append(0)
+    u.append((a[n - 2][0] * u[n - 3] - b[n - 2]) / (a[n - 2][1] * (-1) - a[n - 2][0] * v[n - 3]))
+    
+
+    #обратный ход
+    x = []
+
+    x.append(u[n - 2])
+
+    for i in range(n - 2):
+        x.append(v[n - i - 3] * x[i] + u[n - i - 3])
+
+    x.reverse()
+
+    return x
+
+#вычисление значения для интерполяции
+def countS(a, b, c, d, xi, x):
+    return a + b * (x - xi) + pow(x - xi, 2) * c / 2 + pow(x - xi, 3) * d / 6
 
 #первый вариант работы программы
 def variant1():
     table = read_table()
-    n = len(table)
-    a = table[0][0]
-    b = table[n - 1][0]
+    n = len(table) - 1
+    ag = table[0][0]
+    bg = table[n - 1][0]
 
     while(True):
         print('Введите значение x для точки: ', end='')
         xzn = float(input())
 
-        if xzn >= a and xzn <= b:
+        if xzn >= ag and xzn <= bg:
             break
 
     #h
-    table[0].append(0)
-    for i in range(1, n):
-        table[i].append(table[i][0] - table[i - 1][0])
+    h = []
+    for i in range(n):
+        h.append(table[i + 1][0] - table[i][0])
 
-    progonka(table)
+    
+    c = progonka(table, h)
+    c.append(0)
+    c.insert(0, 0)
 
-    result = 0
+    d = []
+    b = []
 
-    for i in range(n - 1):
-        if xzn >= table[i][0]:
-            if xzn <= table[i + 1][0]:
-                a = (table[i + 1][1] - table[i][1]) / (table[i + 1][0] - table[i][0])
-                result = a * xzn + table[i][1] - a * table[i][0]
+    for i in range(n):
+        d.append((c[i + 1] - c[i]) / h[i])
+        b.append((h[i] * c[i + 1]) / 2 - d[i] * pow(h[i], 2) / 6 + (table[i + 1][1] - table[i][1]) / h[i])
 
-    print('\nРезультат (линейная интерполяция): ', result)
 
+    for i in range(n):
+        if xzn >= table[i][0] and xzn <= table[i + 1][0]:
+            result = countS(table[i + 1][1], b[i], c[i + 1], d[i], table[i + 1][0], xzn)
+            break
+
+    print('\n\nРезультат: ', result)
 
     result = 0
 
