@@ -144,11 +144,12 @@ def countS(a, b, c, d, xi, x):
 #вычисление значений для интерполяции
 def count_Splain(xs, table, b, c, d):
     k = len(xs)
+    n = len(table) - 1
     ys = np.zeros(k)
     i = 0
     
     for j in range(k):
-        if xs[j] >= table[i][0]:
+        if xs[j] >= table[i][0] and i < n:
             i += 1
         ys[j] = countS(table[i][1], b[i - 1], c[i], d[i - 1], table[i][0], xs[j])
 
@@ -252,7 +253,7 @@ def variant2():
     x = np.arange(table[0][0], table[len(table) - 1][0], 0.001)
 
     sy = count_Splain(x, table, b, c, d)
-    plt.plot(x, sy, 'b')
+    plt.plot(x, sy, 'g')
 
     fy = count_function(x, func)
     plt.plot(x, fy, 'r', label=r'f(x)')
