@@ -51,140 +51,6 @@ def read_x():
 
     return xt
 
-#интерполяционный полином Лагранжа
-def Lagrange(table):
-
-    n = len(table)
-    coef_Lagrange = []
-
-    #вычисление коэффициентов
-    for i in range(n):
-        coef1 = []
-        coef = []
-
-        znam = 1
-
-        if i == 0:
-            coef.append(table[1][0] * (-1))
-        else:
-            coef.append(table[0][0] * (-1))
-
-        coef.append(1)
-
-        for k in range(n):
-            if k != i and k != abs(bool(i) - 1):
-
-                coef1 = coef.copy()
-
-                coef.insert(0, 0)
-
-                for j in range(len(coef1)):
-                    coef[j] += coef1[j] * table[k][0] * (-1)
-
-            if k != i:
-                znam *= (table[i][0] - table[k][0])
-
-        for j in range(len(coef)):
-            coef[j] /= znam
-            coef[j] *= table[i][1]
-
-        if i == 0:
-            for j in range(len(coef)):
-                coef_Lagrange.append(coef[j])
-        else:
-            for j in range(len(coef)):
-                coef_Lagrange[j] += coef[j]
-
-    #вывод полинома
-    print('\nПолином Лагранжа: ', end='')
-
-    for i in range(n - 1):
-        print(coef_Lagrange[len(coef_Lagrange) - 1 - i], ' * (x^', n - i - 1, ') + ', end='', sep='')
-
-    print(coef_Lagrange[0])
-
-    return coef_Lagrange
-
-#интерполяционный полином Ньютона
-def Newton(table, f):
-
-    #вычисление разностей
-    n = len(table)
-    
-    f.append([])
-    for i in range(n):
-        f[0].append(table[i][1])
-        
-
-    for i in range(1, n):
-        f.append([])
-        k = i
-        for j in range(n - i):
-            f[i].append((f[i - 1][j + 1] - f[i - 1][j])/(table[k][0] - table[j][0]))
-            k += 1
-
-    #вывод полинома
-    print('\nПолином Ньютона: ', table[0][1], end='')
-
-    for i in range(n - 1):
-        print(' + ', end='')
-        for j in range(i + 1):
-            print('(x - ', end='')
-            if table[j][0] < 0:
-                print('(', table[j][0], ')', end='', sep='')
-            else:
-                print(table[j][0], end='')
-            print(') * ', end='')
-
-        if f[i + 1][0] < 0:
-            print('(', f[i + 1][0], ')', end='', sep='')
-        else:
-            print(f[i + 1][0], end='')
-    
-    return
-
-#вычисление результатов путём подстановки в полином Лагранжа
-def count_Lagrange(xs, coefs):
-    order = len(coefs)
-
-    ys = np.zeros(len(xs))
-
-    ys += coefs[order - 1]
-
-    for i in range(order - 1):
-        ys *= xs
-        ys += coefs[order - 2 - i]
-
-    return ys
-
-#вычисление результатов путём подстановки в полином Ньютона
-def count_Newton(xs, f, table):
-
-    ys = np.zeros(len(xs))
-    ys += f[0][0]
-
-    n = len(table)
-
-    s = []
-
-    for i in range(n - 1):
-        s.append([])
-        for j in range(len(ys)):
-            s[i].append(f[i + 1][0])
-   
-    r = np.zeros(len(xs))
-
-    for i in range(n - 1):
-        r = xs - table[i]
-
-        for j in range(n - 2, -1 + i, -1):
-            s[j] *= r
-
-    for i in range(n - 1):
-        ys += s[i]
-
-    return ys
-
 #вычисление значений функции
 def count_function(xs, func):
     ys = []
@@ -275,12 +141,25 @@ def progonka(table, h):
 def countS(a, b, c, d, xi, x):
     return a + b * (x - xi) + pow(x - xi, 2) * c / 2 + pow(x - xi, 3) * d / 6
 
+#вычисление значений для интерполяции
+def count_Splain(xs, table, b, c, d):
+    k = len(xs)
+    ys = np.zeros(k)
+    i = 0
+    
+    for j in range(k):
+        if xs[j] >= table[i][0]:
+            i += 1
+        ys[j] = countS(table[i][1], b[i - 1], c[i], d[i - 1], table[i][0], xs[j])
+
+    return ys
+
 #первый вариант работы программы
 def variant1():
     table = read_table()
     n = len(table) - 1
     ag = table[0][0]
-    bg = table[n - 1][0]
+    bg = table[n][0]
 
     while(True):
         print('Введите значение x для точки: ', end='')
@@ -289,12 +168,11 @@ def variant1():
         if xzn >= ag and xzn <= bg:
             break
 
-    #h
+
     h = []
     for i in range(n):
         h.append(table[i + 1][0] - table[i][0])
 
-    
     c = progonka(table, h)
     c.append(0)
     c.insert(0, 0)
@@ -312,56 +190,7 @@ def variant1():
             result = countS(table[i + 1][1], b[i], c[i + 1], d[i], table[i + 1][0], xzn)
             break
 
-    print('\n\nРезультат: ', result)
-
-    result = 0
-
-    count = 0
-    for i in range(n):
-        chisl = table[i][1]
-        znam = 1
-        for j in range(n):
-            count += 1
-            if (i != j):
-                chisl *= xzn - table[j][0]
-                znam *= table[i][0] - table[j][0]
-        result += chisl / znam
-
-    print('\n\nРезультат (полином Лагранжа): ', result)
-
-
-    coef_Lagrange = Lagrange(table)
-
-    result1 = coef_Lagrange[len(coef_Lagrange) - 1]
-    count = 0
-
-    for i in range(n - 1):
-        result1 *= xzn
-        result1 += coef_Lagrange[len(coef_Lagrange) - 2 - i]
-        count += 1
-
-    print('\nРезультат (полином Лагранжа): ', result1)
-
-
-    f = []
-    Newton(table, f)
-
-    result = table[0][1]
-    s = []
-
-    for i in range(1, n):
-        s.append(f[i][0])
-
-    for i in range(n - 1):
-        r = xzn - table[i][0]
-
-        for j in range(n - 2, -1 + i, -1):
-            s[j] *= r
-
-    for i in range(n - 1):
-        result += s[i]
-
-    print('\n\nРезультат (полином Ньютона): ', result)
+    print('\nРезультат: ', result)
 
     xt = []
     yt = []
@@ -371,11 +200,9 @@ def variant1():
         yt.append(table[i][1])
 
     x = np.arange(table[0][0], table[len(table) - 1][0], 0.001)
-    plt.plot(x, count_Lagrange(x, coef_Lagrange), 'y')
-    plt.plot(x, count_Newton(x, f, xt), 'g')
-
-    plt.plot(xzn, result, 'ro')
+    plt.plot(x, count_Splain(x, table, b, c, d), 'g')
     plt.plot(xt, yt, 'bo')
+    plt.plot(xzn, result, 'ro')
     plt.grid(True)
 
     plt.xlabel(r'$x$', fontsize=14)
@@ -389,6 +216,7 @@ def variant1():
 def variant2():
     print('Введите функцию: y = ', end='')
     func = input()
+    print('\n')
 
     table = read_x()
 
@@ -397,10 +225,22 @@ def variant2():
         table[i].append(eval(func))
         print('x = ', table[i][0], '   y = ', table[i][1], sep='')
 
-    coef_Lagrange = Lagrange(table)
+    n = len(table) - 1
 
-    f = []
-    Newton(table, f)
+    h = []
+    for i in range(n):
+        h.append(table[i + 1][0] - table[i][0])
+
+    c = progonka(table, h)
+    c.append(0)
+    c.insert(0, 0)
+
+    d = []
+    b = []
+
+    for i in range(n):
+        d.append((c[i + 1] - c[i]) / h[i])
+        b.append((h[i] * c[i + 1]) / 2 - d[i] * pow(h[i], 2) / 6 + (table[i + 1][1] - table[i][1]) / h[i])
 
     xt = []
     yt = []
@@ -411,10 +251,9 @@ def variant2():
 
     x = np.arange(table[0][0], table[len(table) - 1][0], 0.001)
 
-    ly = count_Lagrange(x, coef_Lagrange)
-    plt.plot(x, ly, 'y')
-    plt.plot(x, count_Newton(x, f, xt), 'g')
-    
+    sy = count_Splain(x, table, b, c, d)
+    plt.plot(x, sy, 'b')
+
     fy = count_function(x, func)
     plt.plot(x, fy, 'r', label=r'f(x)')
 
@@ -425,7 +264,7 @@ def variant2():
     plt.xlabel(r'$x$', fontsize=14)
     plt.ylabel(r'$y$', fontsize=14)
 
-    razn = count_razn(ly, fy)
+    razn = count_razn(sy, fy)
 
     for i in range(len(razn)):
         razn[i][0] = table[0][0] + razn[i][0] * 0.001
